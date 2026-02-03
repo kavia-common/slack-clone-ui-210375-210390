@@ -135,6 +135,7 @@ function App() {
         directMessages={directMessages}
         users={users}
         currentWorkspace={currentWorkspace}
+        workspaces={workspaces}
       />
 
       {/* Main Chat Area */}
