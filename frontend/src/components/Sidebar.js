@@ -29,7 +29,7 @@ const Sidebar = ({
       <div className="w-16 bg-sidebar flex flex-col items-center py-4 custom-scrollbar-dark overflow-y-auto">
         <button
           onClick={onToggleCollapse}
-          className="text-white text-2xl hover:bg-sidebar-hover w-10 h-10 rounded flex items-center justify-center mb-4"
+          className="text-white text-2xl hover:bg-white/[0.06] w-10 h-10 rounded flex items-center justify-center mb-4 transition-colors"
         >
           {currentWorkspace?.icon || '🚀'}
         </button>
@@ -40,8 +40,8 @@ const Sidebar = ({
   return (
     <div className="w-64 bg-sidebar text-white flex flex-col custom-scrollbar-dark">
       {/* Workspace Header */}
-      <div className="px-4 py-3 border-b border-sidebar-hover">
-        <button className="flex items-center justify-between w-full hover:bg-sidebar-hover rounded px-2 py-1 transition-colors">
+      <div className="px-4 py-3 border-b border-white/[0.1]">
+        <button className="flex items-center justify-between w-full hover:bg-white/[0.06] rounded px-2 py-1 transition-colors">
           <div className="flex items-center gap-2">
             <span className="text-xl">{currentWorkspace?.icon || '🚀'}</span>
             <span className="font-bold text-white truncate">
@@ -67,8 +67,8 @@ const Sidebar = ({
                 onClick={() => onChannelSelect(channel.id)}
                 className={`w-full flex items-center justify-between px-2 py-1 rounded text-sm transition-colors ${
                   activeChannel === channel.id
-                    ? 'bg-sidebar-active text-white'
-                    : 'text-gray-300 hover:bg-sidebar-hover hover:text-white'
+                    ? 'bg-sidebar-active text-white font-semibold'
+                    : 'text-gray-300 hover:bg-white/[0.06] hover:text-white'
                 }`}
               >
                 <div className="flex items-center gap-2 truncate">
@@ -104,8 +104,8 @@ const Sidebar = ({
                   onClick={() => onChannelSelect(dm.id)}
                   className={`w-full flex items-center justify-between px-2 py-1 rounded text-sm transition-colors ${
                     activeChannel === dm.id
-                      ? 'bg-sidebar-active text-white'
-                      : 'text-gray-300 hover:bg-sidebar-hover hover:text-white'
+                      ? 'bg-sidebar-active text-white font-semibold'
+                      : 'text-gray-300 hover:bg-white/[0.06] hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-2 truncate">
@@ -138,8 +138,8 @@ const Sidebar = ({
       </div>
 
       {/* User Profile Footer */}
-      <div className="px-3 py-3 border-t border-sidebar-hover">
-        <button className="flex items-center gap-2 hover:bg-sidebar-hover rounded px-2 py-1 w-full transition-colors">
+      <div className="px-3 py-3 border-t border-white/[0.1]">
+        <button className="flex items-center gap-2 hover:bg-white/[0.06] rounded px-2 py-1 w-full transition-colors">
           <div className="relative">
             <span className="text-2xl">👤</span>
             <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-sidebar" />

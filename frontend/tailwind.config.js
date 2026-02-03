@@ -30,7 +30,7 @@ module.exports = {
         },
         sidebar: {
           DEFAULT: '#3f0e40',
-          hover: '#350d36',
+          hover: 'rgba(255, 255, 255, 0.06)',
           active: '#1164a3',
         },
         primary: '#3b82f6',
