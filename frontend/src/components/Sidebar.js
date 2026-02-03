@@ -15,6 +15,7 @@ import { Hash, Lock, ChevronDown, Plus, MessageSquare, Edit3, AtSign, Bookmark, 
  * @param {Array} props.users - List of users
  * @param {Object} props.currentWorkspace - Current workspace object
  * @param {Array} props.workspaces - List of all workspaces
+ * @param {Function} props.onWorkspaceSwitch - Callback when workspace is switched
  */
 const Sidebar = ({ 
   isCollapsed, 
@@ -25,7 +26,8 @@ const Sidebar = ({
   directMessages,
   users,
   currentWorkspace,
-  workspaces 
+  workspaces,
+  onWorkspaceSwitch
 }) => {
   const [channelsExpanded, setChannelsExpanded] = useState(true);
   const [dmsExpanded, setDmsExpanded] = useState(true);
@@ -143,7 +145,7 @@ const Sidebar = ({
                       <button
                         key={workspace.id}
                         onClick={() => {
-                          console.log('Switching to workspace:', workspace.name);
+                          onWorkspaceSwitch(workspace.id);
                           setWorkspaceSwitcherOpen(false);
                         }}
                         className="w-full px-5 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors duration-100"

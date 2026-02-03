@@ -2,32 +2,87 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatArea from './components/ChatArea';
 import ThreadPanel from './components/ThreadPanel';
-import { workspaces, users, channels, directMessages, messages as initialMessages, threads as initialThreads } from './data/mockData';
+import { workspaces, users, workspaceData } from './data/mockData';
 
 // PUBLIC_INTERFACE
 /**
  * Main Slack clone application component
- * Manages the entire application state and layout
+ * Manages the entire application state and layout including workspace switching
  */
 function App() {
+  const [currentWorkspaceId, setCurrentWorkspaceId] = useState('ws1');
   const [activeChannel, setActiveChannel] = useState('ch3');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeThreadId, setActiveThreadId] = useState(null);
-  const [currentWorkspace] = useState(workspaces[0]);
-  const [messages, setMessages] = useState(initialMessages);
-  const [threads, setThreads] = useState(initialThreads);
+  const [messages, setMessages] = useState({});
+  const [threads, setThreads] = useState({});
+
+  // Get current workspace object
+  const currentWorkspace = workspaces.find((ws) => ws.id === currentWorkspaceId) || workspaces[0];
+
+  // Get workspace-specific data
+  const currentWorkspaceData = workspaceData[currentWorkspaceId] || workspaceData.ws1;
+  const channels = currentWorkspaceData.channels;
+  const directMessages = currentWorkspaceData.directMessages;
+
+  // Initialize messages and threads for current workspace
+  useEffect(() => {
+    if (currentWorkspaceData) {
+      setMessages((prev) => ({
+        ...prev,
+        [currentWorkspaceId]: currentWorkspaceData.messages,
+      }));
+      setThreads((prev) => ({
+        ...prev,
+        [currentWorkspaceId]: currentWorkspaceData.threads,
+      }));
+    }
+  }, [currentWorkspaceId, currentWorkspaceData]);
+
+  // Get current workspace messages and threads
+  const workspaceMessages = messages[currentWorkspaceId] || [];
+  const workspaceThreads = threads[currentWorkspaceId] || {};
 
   // Get active channel object
   const activeChannelObj = channels.find((ch) => ch.id === activeChannel) || channels[0];
 
   // Filter messages for active channel
-  const channelMessages = messages.filter((msg) => msg.channelId === activeChannel);
+  const channelMessages = workspaceMessages.filter((msg) => msg.channelId === activeChannel);
 
   // Get thread data if a thread is open
   const threadParentMessage = activeThreadId 
-    ? messages.find((msg) => msg.id === activeThreadId)
+    ? workspaceMessages.find((msg) => msg.id === activeThreadId)
     : null;
-  const threadReplies = activeThreadId ? threads[activeThreadId] || [] : [];
+  const threadReplies = activeThreadId ? workspaceThreads[activeThreadId] || [] : [];
+
+  // PUBLIC_INTERFACE
+  /**
+   * Handle workspace switching
+   * @param {string} workspaceId - ID of the workspace to switch to
+   */
+  const handleWorkspaceSwitch = (workspaceId) => {
+    if (workspaceId === currentWorkspaceId) return;
+
+    // Switch workspace
+    setCurrentWorkspaceId(workspaceId);
+
+    // Get the new workspace data
+    const newWorkspaceData = workspaceData[workspaceId];
+    
+    // Close any open threads
+    setActiveThreadId(null);
+
+    // Reset to first channel of new workspace or find a valid channel
+    if (newWorkspaceData && newWorkspaceData.channels.length > 0) {
+      // Try to find a channel with the same name, otherwise use the first channel
+      const matchingChannel = newWorkspaceData.channels.find(
+        (ch) => ch.name === activeChannelObj?.name
+      );
+      setActiveChannel(matchingChannel ? matchingChannel.id : newWorkspaceData.channels[0].id);
+    }
+
+    console.log('Switched to workspace:', workspaceId);
+  };
 
   // PUBLIC_INTERFACE
   /**
@@ -35,6 +90,13 @@ function App() {
    * @param {string} channelId - ID of the selected channel
    */
   const handleChannelSelect = (channelId) => {
+    // Verify the channel exists in the current workspace
+    const channelExists = channels.some((ch) => ch.id === channelId);
+    if (!channelExists) {
+      console.warn('Channel not found in current workspace:', channelId);
+      return;
+    }
+
     setActiveChannel(channelId);
     setActiveThreadId(null); // Close thread when switching channels
   };
@@ -74,24 +136,30 @@ function App() {
    * @param {string} newContent - New message content
    */
   const handleEditMessage = (messageId, newContent) => {
-    setMessages((prevMessages) =>
-      prevMessages.map((msg) =>
+    setMessages((prevMessages) => {
+      const updatedMessages = { ...prevMessages };
+      updatedMessages[currentWorkspaceId] = updatedMessages[currentWorkspaceId].map((msg) =>
         msg.id === messageId
           ? { ...msg, content: newContent, isEdited: true }
           : msg
-      )
-    );
+      );
+      return updatedMessages;
+    });
     
     // Also update thread replies if the message is in a thread
     setThreads((prevThreads) => {
       const updatedThreads = { ...prevThreads };
-      Object.keys(updatedThreads).forEach((threadId) => {
-        updatedThreads[threadId] = updatedThreads[threadId].map((reply) =>
+      const workspaceThreadsCopy = { ...updatedThreads[currentWorkspaceId] };
+      
+      Object.keys(workspaceThreadsCopy).forEach((threadId) => {
+        workspaceThreadsCopy[threadId] = workspaceThreadsCopy[threadId].map((reply) =>
           reply.id === messageId
             ? { ...reply, content: newContent, isEdited: true }
             : reply
         );
       });
+      
+      updatedThreads[currentWorkspaceId] = workspaceThreadsCopy;
       return updatedThreads;
     });
   };
@@ -102,18 +170,31 @@ function App() {
    * @param {string} messageId - ID of the message to delete
    */
   const handleDeleteMessage = (messageId) => {
-    setMessages((prevMessages) => prevMessages.filter((msg) => msg.id !== messageId));
+    setMessages((prevMessages) => {
+      const updatedMessages = { ...prevMessages };
+      updatedMessages[currentWorkspaceId] = updatedMessages[currentWorkspaceId].filter(
+        (msg) => msg.id !== messageId
+      );
+      return updatedMessages;
+    });
     
     // Also remove from threads if needed
     setThreads((prevThreads) => {
       const updatedThreads = { ...prevThreads };
-      Object.keys(updatedThreads).forEach((threadId) => {
-        updatedThreads[threadId] = updatedThreads[threadId].filter((reply) => reply.id !== messageId);
+      const workspaceThreadsCopy = { ...updatedThreads[currentWorkspaceId] };
+      
+      Object.keys(workspaceThreadsCopy).forEach((threadId) => {
+        workspaceThreadsCopy[threadId] = workspaceThreadsCopy[threadId].filter(
+          (reply) => reply.id !== messageId
+        );
       });
+      
       // Remove thread entry if parent message is deleted
-      if (updatedThreads[messageId]) {
-        delete updatedThreads[messageId];
+      if (workspaceThreadsCopy[messageId]) {
+        delete workspaceThreadsCopy[messageId];
       }
+      
+      updatedThreads[currentWorkspaceId] = workspaceThreadsCopy;
       return updatedThreads;
     });
     
@@ -136,6 +217,7 @@ function App() {
         users={users}
         currentWorkspace={currentWorkspace}
         workspaces={workspaces}
+        onWorkspaceSwitch={handleWorkspaceSwitch}
       />
 
       {/* Main Chat Area */}
