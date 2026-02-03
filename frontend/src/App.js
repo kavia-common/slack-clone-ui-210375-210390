@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatArea from './components/ChatArea';
 import ThreadPanel from './components/ThreadPanel';
-import { workspaces, users, channels, directMessages, messages, threads } from './data/mockData';
+import { workspaces, users, channels, directMessages, messages as initialMessages, threads as initialThreads } from './data/mockData';
 
 // PUBLIC_INTERFACE
 /**
@@ -14,6 +14,8 @@ function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [currentWorkspace] = useState(workspaces[0]);
+  const [messages, setMessages] = useState(initialMessages);
+  const [threads, setThreads] = useState(initialThreads);
 
   // Get active channel object
   const activeChannelObj = channels.find((ch) => ch.id === activeChannel) || channels[0];
@@ -65,6 +67,62 @@ function App() {
     console.log('Adding reaction:', emoji, 'to message:', messageId);
   };
 
+  // PUBLIC_INTERFACE
+  /**
+   * Handle editing a message
+   * @param {string} messageId - ID of the message to edit
+   * @param {string} newContent - New message content
+   */
+  const handleEditMessage = (messageId, newContent) => {
+    setMessages((prevMessages) =>
+      prevMessages.map((msg) =>
+        msg.id === messageId
+          ? { ...msg, content: newContent, isEdited: true }
+          : msg
+      )
+    );
+    
+    // Also update thread replies if the message is in a thread
+    setThreads((prevThreads) => {
+      const updatedThreads = { ...prevThreads };
+      Object.keys(updatedThreads).forEach((threadId) => {
+        updatedThreads[threadId] = updatedThreads[threadId].map((reply) =>
+          reply.id === messageId
+            ? { ...reply, content: newContent, isEdited: true }
+            : reply
+        );
+      });
+      return updatedThreads;
+    });
+  };
+
+  // PUBLIC_INTERFACE
+  /**
+   * Handle deleting a message
+   * @param {string} messageId - ID of the message to delete
+   */
+  const handleDeleteMessage = (messageId) => {
+    setMessages((prevMessages) => prevMessages.filter((msg) => msg.id !== messageId));
+    
+    // Also remove from threads if needed
+    setThreads((prevThreads) => {
+      const updatedThreads = { ...prevThreads };
+      Object.keys(updatedThreads).forEach((threadId) => {
+        updatedThreads[threadId] = updatedThreads[threadId].filter((reply) => reply.id !== messageId);
+      });
+      // Remove thread entry if parent message is deleted
+      if (updatedThreads[messageId]) {
+        delete updatedThreads[messageId];
+      }
+      return updatedThreads;
+    });
+    
+    // Close thread panel if the parent message was deleted
+    if (activeThreadId === messageId) {
+      setActiveThreadId(null);
+    }
+  };
+
   return (
     <div className="h-screen flex overflow-hidden bg-white">
       {/* Left Sidebar */}
@@ -86,6 +144,8 @@ function App() {
         users={users}
         onThreadOpen={handleThreadOpen}
         onReact={handleReact}
+        onEditMessage={handleEditMessage}
+        onDeleteMessage={handleDeleteMessage}
       />
 
       {/* Right Thread Panel (conditional) */}
@@ -97,6 +157,8 @@ function App() {
           users={users}
           onClose={handleThreadClose}
           onReact={handleReact}
+          onEditMessage={handleEditMessage}
+          onDeleteMessage={handleDeleteMessage}
         />
       )}
     </div>

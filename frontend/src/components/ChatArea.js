@@ -11,8 +11,10 @@ import Message from './Message';
  * @param {Array} props.users - List of all users
  * @param {Function} props.onThreadOpen - Callback when thread is opened
  * @param {Function} props.onReact - Callback when reaction is added
+ * @param {Function} props.onEditMessage - Callback when message is edited
+ * @param {Function} props.onDeleteMessage - Callback when message is deleted
  */
-const ChatArea = ({ activeChannel, messages, users, onThreadOpen, onReact }) => {
+const ChatArea = ({ activeChannel, messages, users, onThreadOpen, onReact, onEditMessage, onDeleteMessage }) => {
   const [messageText, setMessageText] = useState('');
   const [showFormatting, setShowFormatting] = useState(false);
 
@@ -68,6 +70,8 @@ const ChatArea = ({ activeChannel, messages, users, onThreadOpen, onReact }) => 
               user={getUserById(message.userId)}
               onReact={onReact}
               onThreadOpen={onThreadOpen}
+              onEdit={onEditMessage}
+              onDelete={onDeleteMessage}
             />
           ))}
         </div>

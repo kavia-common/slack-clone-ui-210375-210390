@@ -12,8 +12,10 @@ import Message from './Message';
  * @param {Array} props.users - List of all users
  * @param {Function} props.onClose - Callback to close the thread panel
  * @param {Function} props.onReact - Callback for adding reaction
+ * @param {Function} props.onEditMessage - Callback for editing message
+ * @param {Function} props.onDeleteMessage - Callback for deleting message
  */
-const ThreadPanel = ({ threadId, parentMessage, replies, users, onClose, onReact }) => {
+const ThreadPanel = ({ threadId, parentMessage, replies, users, onClose, onReact, onEditMessage, onDeleteMessage }) => {
   const [replyText, setReplyText] = useState('');
 
   const getUserById = (userId) => users.find((u) => u.id === userId);
@@ -50,6 +52,8 @@ const ThreadPanel = ({ threadId, parentMessage, replies, users, onClose, onReact
             user={getUserById(parentMessage.userId)}
             onReact={onReact}
             onThreadOpen={() => {}}
+            onEdit={onEditMessage}
+            onDelete={onDeleteMessage}
           />
         </div>
 
@@ -65,6 +69,8 @@ const ThreadPanel = ({ threadId, parentMessage, replies, users, onClose, onReact
               user={getUserById(reply.userId)}
               onReact={onReact}
               onThreadOpen={() => {}}
+              onEdit={onEditMessage}
+              onDelete={onDeleteMessage}
             />
           ))}
         </div>
