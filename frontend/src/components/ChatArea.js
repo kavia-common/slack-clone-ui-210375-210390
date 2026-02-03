@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, Smile, Paperclip, AtSign, Hash, Bold, Italic, Strikethrough, Code } from 'lucide-react';
+import { Send, Smile, Paperclip, AtSign, Hash, Bold, Italic, Strikethrough, Code, Info, Star, UserPlus, Settings, Phone, Video } from 'lucide-react';
 import Message from './Message';
 
 // PUBLIC_INTERFACE
@@ -13,17 +13,18 @@ import Message from './Message';
  * @param {Function} props.onReact - Callback when reaction is added
  * @param {Function} props.onEditMessage - Callback when message is edited
  * @param {Function} props.onDeleteMessage - Callback when message is deleted
+ * @param {Function} props.onSendMessage - Callback when a new message is sent
  */
-const ChatArea = ({ activeChannel, messages, users, onThreadOpen, onReact, onEditMessage, onDeleteMessage }) => {
+const ChatArea = ({ activeChannel, messages, users, onThreadOpen, onReact, onEditMessage, onDeleteMessage, onSendMessage }) => {
   const [messageText, setMessageText] = useState('');
   const [showFormatting, setShowFormatting] = useState(false);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (messageText.trim()) {
-      // In a real app, this would send the message to the backend
-      console.log('Sending message:', messageText);
+    if (messageText.trim() && onSendMessage) {
+      onSendMessage(messageText);
       setMessageText('');
+      setShowFormatting(false);
     }
   };
 
@@ -36,11 +37,45 @@ const ChatArea = ({ activeChannel, messages, users, onThreadOpen, onReact, onEdi
         <div className="flex items-center gap-2">
           <Hash className="w-5 h-5 text-gray-600" />
           <h2 className="font-bold text-gray-900">{activeChannel?.name || 'channel'}</h2>
+          <button 
+            className="p-1 hover:bg-gray-100 rounded transition-colors" 
+            title="Star channel"
+          >
+            <Star className="w-4 h-4 text-gray-500" />
+          </button>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <span className="hidden sm:inline">{activeChannel?.members || 0} members</span>
-          <div className="w-px h-4 bg-gray-300 hidden sm:block" />
-          <span className="hidden sm:inline">{activeChannel?.description || ''}</span>
+        <div className="flex items-center gap-1">
+          <button 
+            className="p-2 hover:bg-gray-100 rounded transition-colors" 
+            title="Start call"
+          >
+            <Phone className="w-4 h-4 text-gray-600" />
+          </button>
+          <button 
+            className="p-2 hover:bg-gray-100 rounded transition-colors" 
+            title="Start video call"
+          >
+            <Video className="w-4 h-4 text-gray-600" />
+          </button>
+          <div className="w-px h-5 bg-gray-300 mx-1" />
+          <button 
+            className="p-2 hover:bg-gray-100 rounded transition-colors" 
+            title="Add members"
+          >
+            <UserPlus className="w-4 h-4 text-gray-600" />
+          </button>
+          <button 
+            className="p-2 hover:bg-gray-100 rounded transition-colors" 
+            title="Channel details"
+          >
+            <Info className="w-4 h-4 text-gray-600" />
+          </button>
+          <button 
+            className="p-2 hover:bg-gray-100 rounded transition-colors" 
+            title="Channel settings"
+          >
+            <Settings className="w-4 h-4 text-gray-600" />
+          </button>
         </div>
       </div>
 

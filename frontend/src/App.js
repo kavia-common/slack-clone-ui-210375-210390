@@ -204,6 +204,52 @@ function App() {
     }
   };
 
+  // PUBLIC_INTERFACE
+  /**
+   * Handle sending a new message
+   * @param {string} content - Message content to send
+   */
+  const handleSendMessage = (content) => {
+    if (!content.trim()) return;
+
+    // Generate a unique message ID
+    const newMessageId = `m${Date.now()}`;
+    
+    // Get current time
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    const timestamp = `${displayHours}:${displayMinutes} ${ampm}`;
+
+    // Create new message object
+    const newMessage = {
+      id: newMessageId,
+      workspaceId: currentWorkspaceId,
+      userId: 'u1', // Current user (Sarah Chen from mockData)
+      channelId: activeChannel,
+      content: content.trim(),
+      timestamp: timestamp,
+      reactions: [],
+      replies: 0,
+      isThreaded: false,
+    };
+
+    // Add message to state
+    setMessages((prevMessages) => {
+      const updatedMessages = { ...prevMessages };
+      if (!updatedMessages[currentWorkspaceId]) {
+        updatedMessages[currentWorkspaceId] = [];
+      }
+      updatedMessages[currentWorkspaceId] = [...updatedMessages[currentWorkspaceId], newMessage];
+      return updatedMessages;
+    });
+
+    console.log('Message sent:', newMessage);
+  };
+
   return (
     <div className="h-screen flex overflow-hidden bg-white">
       {/* Left Sidebar */}
@@ -229,6 +275,7 @@ function App() {
         onReact={handleReact}
         onEditMessage={handleEditMessage}
         onDeleteMessage={handleDeleteMessage}
+        onSendMessage={handleSendMessage}
       />
 
       {/* Right Thread Panel (conditional) */}
