@@ -29,9 +29,13 @@ module.exports = {
           }
         },
         sidebar: {
-          DEFAULT: '#3f0e40',
+          DEFAULT: '#3F0E40',
+          header: '#350d36',
           hover: 'rgba(255, 255, 255, 0.06)',
-          active: '#1164a3',
+          active: '#1164A3',
+        },
+        notification: {
+          badge: '#E01E5A',
         },
         primary: '#3b82f6',
         secondary: '#64748b',
