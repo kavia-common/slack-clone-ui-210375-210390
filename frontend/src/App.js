@@ -43,10 +43,15 @@ function App() {
   const workspaceMessages = messages[currentWorkspaceId] || [];
   const workspaceThreads = threads[currentWorkspaceId] || {};
 
-  // Get active channel object
-  const activeChannelObj = channels.find((ch) => ch.id === activeChannel) || channels[0];
+  // Get active channel or DM object
+  const activeChannelObj = channels.find((ch) => ch.id === activeChannel);
+  const activeDMObj = directMessages.find((dm) => dm.id === activeChannel);
+  const activeConversation = activeChannelObj || activeDMObj;
 
-  // Filter messages for active channel
+  // Determine if current conversation is a DM
+  const isDM = !!activeDMObj;
+
+  // Filter messages for active channel or DM
   const channelMessages = workspaceMessages.filter((msg) => msg.channelId === activeChannel);
 
   // Get thread data if a thread is open
@@ -86,19 +91,21 @@ function App() {
 
   // PUBLIC_INTERFACE
   /**
-   * Handle channel selection
-   * @param {string} channelId - ID of the selected channel
+   * Handle channel or DM selection
+   * @param {string} channelId - ID of the selected channel or DM
    */
   const handleChannelSelect = (channelId) => {
-    // Verify the channel exists in the current workspace
+    // Verify the channel or DM exists in the current workspace
     const channelExists = channels.some((ch) => ch.id === channelId);
-    if (!channelExists) {
-      console.warn('Channel not found in current workspace:', channelId);
+    const dmExists = directMessages.some((dm) => dm.id === channelId);
+    
+    if (!channelExists && !dmExists) {
+      console.warn('Channel or DM not found in current workspace:', channelId);
       return;
     }
 
     setActiveChannel(channelId);
-    setActiveThreadId(null); // Close thread when switching channels
+    setActiveThreadId(null); // Close thread when switching channels/DMs
   };
 
   // PUBLIC_INTERFACE
@@ -123,10 +130,123 @@ function App() {
    * Handle adding reaction to a message
    * @param {string} messageId - ID of the message
    * @param {string} emoji - Emoji to add as reaction
+   * @param {string} currentUserId - Current user ID (default 'u1')
    */
-  const handleReact = (messageId, emoji) => {
-    // In a real app, this would update the backend
-    console.log('Adding reaction:', emoji, 'to message:', messageId);
+  const handleReact = (messageId, emoji, currentUserId = 'u1') => {
+    setMessages((prevMessages) => {
+      const updatedMessages = { ...prevMessages };
+      updatedMessages[currentWorkspaceId] = updatedMessages[currentWorkspaceId].map((msg) => {
+        if (msg.id === messageId) {
+          const reactions = msg.reactions || [];
+          const existingReactionIndex = reactions.findIndex((r) => r.emoji === emoji);
+
+          if (existingReactionIndex !== -1) {
+            // Reaction exists - toggle user's reaction
+            const reaction = reactions[existingReactionIndex];
+            const userHasReacted = reaction.users && reaction.users.includes(currentUserId);
+
+            if (userHasReacted) {
+              // Remove user from reaction
+              const updatedUsers = reaction.users.filter((uid) => uid !== currentUserId);
+              if (updatedUsers.length === 0) {
+                // Remove reaction entirely if no users left
+                return {
+                  ...msg,
+                  reactions: reactions.filter((r) => r.emoji !== emoji),
+                };
+              } else {
+                // Update count and users
+                return {
+                  ...msg,
+                  reactions: reactions.map((r, idx) =>
+                    idx === existingReactionIndex
+                      ? { ...r, count: updatedUsers.length, users: updatedUsers }
+                      : r
+                  ),
+                };
+              }
+            } else {
+              // Add user to reaction
+              const updatedUsers = [...(reaction.users || []), currentUserId];
+              return {
+                ...msg,
+                reactions: reactions.map((r, idx) =>
+                  idx === existingReactionIndex
+                    ? { ...r, count: updatedUsers.length, users: updatedUsers }
+                    : r
+                ),
+              };
+            }
+          } else {
+            // New reaction - add it
+            return {
+              ...msg,
+              reactions: [...reactions, { emoji, count: 1, users: [currentUserId] }],
+            };
+          }
+        }
+        return msg;
+      });
+      return updatedMessages;
+    });
+
+    // Also update thread replies if the message is in a thread
+    setThreads((prevThreads) => {
+      const updatedThreads = { ...prevThreads };
+      const workspaceThreadsCopy = { ...updatedThreads[currentWorkspaceId] };
+      
+      Object.keys(workspaceThreadsCopy).forEach((threadId) => {
+        workspaceThreadsCopy[threadId] = workspaceThreadsCopy[threadId].map((reply) => {
+          if (reply.id === messageId) {
+            const reactions = reply.reactions || [];
+            const existingReactionIndex = reactions.findIndex((r) => r.emoji === emoji);
+
+            if (existingReactionIndex !== -1) {
+              const reaction = reactions[existingReactionIndex];
+              const userHasReacted = reaction.users && reaction.users.includes(currentUserId);
+
+              if (userHasReacted) {
+                const updatedUsers = reaction.users.filter((uid) => uid !== currentUserId);
+                if (updatedUsers.length === 0) {
+                  return {
+                    ...reply,
+                    reactions: reactions.filter((r) => r.emoji !== emoji),
+                  };
+                } else {
+                  return {
+                    ...reply,
+                    reactions: reactions.map((r, idx) =>
+                      idx === existingReactionIndex
+                        ? { ...r, count: updatedUsers.length, users: updatedUsers }
+                        : r
+                    ),
+                  };
+                }
+              } else {
+                const updatedUsers = [...(reaction.users || []), currentUserId];
+                return {
+                  ...reply,
+                  reactions: reactions.map((r, idx) =>
+                    idx === existingReactionIndex
+                      ? { ...r, count: updatedUsers.length, users: updatedUsers }
+                      : r
+                  ),
+                };
+              }
+            } else {
+              return {
+                ...reply,
+                reactions: [...reactions, { emoji, count: 1, users: [currentUserId] }],
+              };
+            }
+          }
+          return reply;
+        });
+      });
+      
+      updatedThreads[currentWorkspaceId] = workspaceThreadsCopy;
+      return updatedThreads;
+    });
   };
 
   // PUBLIC_INTERFACE
@@ -206,11 +326,12 @@ function App() {
 
   // PUBLIC_INTERFACE
   /**
-   * Handle sending a new message
+   * Handle sending a new message to channel or DM
    * @param {string} content - Message content to send
+   * @param {Array} attachments - Optional array of attachment objects
    */
-  const handleSendMessage = (content) => {
-    if (!content.trim()) return;
+  const handleSendMessage = (content, attachments = []) => {
+    if (!content.trim() && attachments.length === 0) return;
 
     // Generate a unique message ID
     const newMessageId = `m${Date.now()}`;
@@ -235,6 +356,8 @@ function App() {
       reactions: [],
       replies: 0,
       isThreaded: false,
+      hasAttachment: attachments.length > 0,
+      attachments: attachments,
     };
 
     // Add message to state
@@ -247,7 +370,61 @@ function App() {
       return updatedMessages;
     });
 
-    console.log('Message sent:', newMessage);
+    console.log('Message sent to', isDM ? 'DM' : 'channel', ':', newMessage);
+  };
+
+  // PUBLIC_INTERFACE
+  /**
+   * Handle sending a reply in a thread
+   * @param {string} threadId - ID of the thread (parent message ID)
+   * @param {string} content - Reply content
+   */
+  const handleSendThreadReply = (threadId, content) => {
+    if (!content.trim()) return;
+
+    const replyId = `t${threadId}-${Date.now()}`;
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    const timestamp = `${displayHours}:${displayMinutes} ${ampm}`;
+
+    const newReply = {
+      id: replyId,
+      userId: 'u1',
+      content: content.trim(),
+      timestamp: timestamp,
+      reactions: [],
+    };
+
+    // Add reply to thread
+    setThreads((prevThreads) => {
+      const updatedThreads = { ...prevThreads };
+      if (!updatedThreads[currentWorkspaceId]) {
+        updatedThreads[currentWorkspaceId] = {};
+      }
+      if (!updatedThreads[currentWorkspaceId][threadId]) {
+        updatedThreads[currentWorkspaceId][threadId] = [];
+      }
+      updatedThreads[currentWorkspaceId][threadId] = [
+        ...updatedThreads[currentWorkspaceId][threadId],
+        newReply,
+      ];
+      return updatedThreads;
+    });
+
+    // Update parent message reply count
+    setMessages((prevMessages) => {
+      const updatedMessages = { ...prevMessages };
+      updatedMessages[currentWorkspaceId] = updatedMessages[currentWorkspaceId].map((msg) =>
+        msg.id === threadId
+          ? { ...msg, replies: (msg.replies || 0) + 1, isThreaded: true }
+          : msg
+      );
+      return updatedMessages;
+    });
   };
 
   return (
@@ -268,7 +445,8 @@ function App() {
 
       {/* Main Chat Area */}
       <ChatArea
-        activeChannel={activeChannelObj}
+        activeChannel={activeConversation}
+        isDM={isDM}
         messages={channelMessages}
         users={users}
         onThreadOpen={handleThreadOpen}
@@ -289,6 +467,7 @@ function App() {
           onReact={handleReact}
           onEditMessage={handleEditMessage}
           onDeleteMessage={handleDeleteMessage}
+          onSendReply={handleSendThreadReply}
         />
       )}
     </div>

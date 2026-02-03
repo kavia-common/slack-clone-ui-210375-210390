@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MoreVertical, MessageSquare, Smile, Edit2, Trash2, Check, X } from 'lucide-react';
+import { MoreVertical, MessageSquare, Smile, Edit2, Trash2, Check, X, File, Image as ImageIcon } from 'lucide-react';
 
 // PUBLIC_INTERFACE
 /**
@@ -64,6 +64,14 @@ const Message = ({ message, user, onReact, onThreadOpen, onEdit, onDelete, curre
   const handleDelete = () => {
     onDelete(message.id);
     setShowDeleteConfirm(false);
+  };
+
+  const handleReactionClick = (emoji) => {
+    onReact(message.id, emoji, currentUserId);
+  };
+
+  const hasUserReacted = (reaction) => {
+    return reaction.users && reaction.users.includes(currentUserId);
   };
 
   return (
@@ -148,8 +156,31 @@ const Message = ({ message, user, onReact, onThreadOpen, onEdit, onDelete, curre
             </div>
           )}
 
-          {/* Attachment Preview */}
-          {!isEditing && message.hasAttachment && message.attachmentType === 'link' && (
+          {/* Attachments Preview */}
+          {!isEditing && message.attachments && message.attachments.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {message.attachments.map((attachment) => (
+                <div 
+                  key={attachment.id}
+                  className="border border-gray-300 rounded p-2 bg-white hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2 max-w-[250px]"
+                >
+                  {attachment.type?.startsWith('image/') ? (
+                    <ImageIcon className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                  ) : (
+                    <File className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-semibold text-blue-600 truncate">
+                      {attachment.name}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Legacy Attachment Preview (for link previews) */}
+          {!isEditing && message.hasAttachment && message.attachmentType === 'link' && !message.attachments && (
             <div className="mt-2 border border-gray-300 rounded p-3 bg-white hover:bg-gray-50 transition-colors cursor-pointer">
               <div className="text-xs text-gray-500 mb-1">Link preview</div>
               <div className="text-sm font-semibold text-blue-600">Figma Design</div>
@@ -159,19 +190,30 @@ const Message = ({ message, user, onReact, onThreadOpen, onEdit, onDelete, curre
           {/* Reactions */}
           {!isEditing && message.reactions && message.reactions.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {message.reactions.map((reaction, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => onReact(message.id, reaction.emoji)}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-gray-300 hover:border-blue-500 bg-white hover:bg-blue-50 transition-colors text-xs"
-                >
-                  <span>{reaction.emoji}</span>
-                  <span className="font-semibold text-gray-700">{reaction.count}</span>
-                </button>
-              ))}
+              {message.reactions.map((reaction, idx) => {
+                const userReacted = hasUserReacted(reaction);
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleReactionClick(reaction.emoji)}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border transition-colors text-xs ${
+                      userReacted
+                        ? 'border-blue-500 bg-blue-50 hover:bg-blue-100'
+                        : 'border-gray-300 bg-white hover:border-blue-500 hover:bg-blue-50'
+                    }`}
+                    title={userReacted ? 'Remove your reaction' : 'Add your reaction'}
+                  >
+                    <span>{reaction.emoji}</span>
+                    <span className={`font-semibold ${userReacted ? 'text-blue-700' : 'text-gray-700'}`}>
+                      {reaction.count}
+                    </span>
+                  </button>
+                );
+              })}
               <button
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                 className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-gray-300 hover:border-blue-500 bg-white hover:bg-blue-50 transition-colors"
+                title="Add reaction"
               >
                 <Smile className="w-3 h-3 text-gray-500" />
               </button>
@@ -197,7 +239,7 @@ const Message = ({ message, user, onReact, onThreadOpen, onEdit, onDelete, curre
           {quickEmojis.map((emoji) => (
             <button
               key={emoji}
-              onClick={() => onReact(message.id, emoji)}
+              onClick={() => handleReactionClick(emoji)}
               className="hover:bg-gray-100 rounded px-2 py-1 text-base transition-colors"
               title={`React with ${emoji}`}
             >
@@ -309,7 +351,7 @@ const Message = ({ message, user, onReact, onThreadOpen, onEdit, onDelete, curre
             <button
               key={emoji}
               onClick={() => {
-                onReact(message.id, emoji);
+                handleReactionClick(emoji);
                 setShowEmojiPicker(false);
               }}
               className="hover:bg-gray-100 rounded p-2 text-xl transition-colors"

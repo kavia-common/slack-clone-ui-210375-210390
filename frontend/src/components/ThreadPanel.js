@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, Send, Smile } from 'lucide-react';
 import Message from './Message';
 
@@ -14,17 +14,41 @@ import Message from './Message';
  * @param {Function} props.onReact - Callback for adding reaction
  * @param {Function} props.onEditMessage - Callback for editing message
  * @param {Function} props.onDeleteMessage - Callback for deleting message
+ * @param {Function} props.onSendReply - Callback for sending a reply
  */
-const ThreadPanel = ({ threadId, parentMessage, replies, users, onClose, onReact, onEditMessage, onDeleteMessage }) => {
+const ThreadPanel = ({ threadId, parentMessage, replies, users, onClose, onReact, onEditMessage, onDeleteMessage, onSendReply }) => {
   const [replyText, setReplyText] = useState('');
+  const textareaRef = useRef(null);
 
   const getUserById = (userId) => users.find((u) => u.id === userId);
 
   const handleSendReply = (e) => {
     e.preventDefault();
-    if (replyText.trim()) {
-      console.log('Sending reply:', replyText);
+    if (replyText.trim() && onSendReply) {
+      onSendReply(threadId, replyText);
       setReplyText('');
+      
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendReply(e);
+    }
+  };
+
+  const handleTextChange = (e) => {
+    setReplyText(e.target.value);
+    
+    // Auto-resize textarea
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   };
 
@@ -81,22 +105,20 @@ const ThreadPanel = ({ threadId, parentMessage, replies, users, onClose, onReact
         <form onSubmit={handleSendReply} className="border-2 border-gray-300 rounded-lg focus-within:border-blue-500 transition-colors">
           <div className="flex items-end gap-2 p-3">
             <textarea
+              ref={textareaRef}
               value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
+              onChange={handleTextChange}
+              onKeyDown={handleKeyDown}
               placeholder="Reply..."
-              className="flex-1 resize-none outline-none text-sm min-h-[40px] max-h-[120px]"
+              className="flex-1 resize-none outline-none text-sm min-h-[40px] max-h-[120px] overflow-y-auto"
               rows={1}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendReply(e);
-                }
-              }}
+              style={{ lineHeight: '1.5' }}
             />
             <div className="flex items-center gap-1 pb-1">
               <button
                 type="button"
                 className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                title="Add emoji"
               >
                 <Smile className="w-4 h-4 text-gray-600" />
               </button>
@@ -104,10 +126,14 @@ const ThreadPanel = ({ threadId, parentMessage, replies, users, onClose, onReact
                 type="submit"
                 disabled={!replyText.trim()}
                 className="p-1.5 bg-primary hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed rounded transition-colors"
+                title="Send reply"
               >
                 <Send className="w-4 h-4 text-white" />
               </button>
             </div>
+          </div>
+          <div className="px-3 pb-2 text-xs text-gray-500">
+            <span className="font-semibold">Shift + Enter</span> to add a new line
           </div>
         </form>
       </div>
