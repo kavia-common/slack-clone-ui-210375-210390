@@ -83,20 +83,20 @@ const Sidebar = ({
   return (
     <div className="w-[260px] bg-[#3F0E40] text-white flex flex-col custom-scrollbar-dark h-screen">
       {/* Workspace Header */}
-      <div className="px-4 py-3 bg-[#350d36] border-b border-white/[0.1] flex-shrink-0 relative" ref={workspaceSwitcherRef}>
+      <div className="px-4 py-3 bg-[#350d36] border-b border-white/[0.1] flex-shrink-0 relative h-[58px] flex items-center" ref={workspaceSwitcherRef}>
         <button 
           onClick={() => setWorkspaceSwitcherOpen(!workspaceSwitcherOpen)}
-          className="flex items-center justify-between w-full hover:bg-white/[0.06] rounded px-2 py-1.5 transition-colors duration-150"
+          className="flex items-center justify-between w-full hover:bg-white/[0.06] rounded px-2 py-1 transition-colors duration-150"
         >
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-white/10 rounded flex items-center justify-center text-xl flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-white/10 rounded flex items-center justify-center text-2xl flex-shrink-0">
               {currentWorkspace?.icon || '🚀'}
             </div>
             <span className="font-black text-white truncate text-[18px] tracking-tight leading-[1.2]">
               {currentWorkspace?.name || 'Workspace'}
             </span>
           </div>
-          <ChevronDown className="w-4 h-4 text-white/70 flex-shrink-0" />
+          <ChevronDown className="w-3 h-3 text-white/70 flex-shrink-0" />
         </button>
 
         {/* Workspace Switcher Dropdown */}
@@ -210,7 +210,7 @@ const Sidebar = ({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto custom-scrollbar-dark">
         {/* Primary Navigation Items */}
-        <div className="px-3 py-2 mt-2 space-y-0.5">
+        <div className="px-3 pt-2 pb-1 space-y-0.5">
           {/* Threads */}
           <button className="w-full flex items-center justify-between px-2 py-1.5 rounded text-[15px] leading-[1.4] text-white/70 hover:bg-white/[0.08] hover:text-white transition-all duration-150">
             <div className="flex items-center gap-3">
@@ -251,10 +251,10 @@ const Sidebar = ({
         </div>
 
         {/* Channels Section */}
-        <div className="px-3 py-2 mt-4">
+        <div className="px-3 pt-4 pb-1">
           <button 
             onClick={() => setChannelsExpanded(!channelsExpanded)}
-            className="flex items-center justify-between w-full text-white/70 hover:text-white text-[13px] leading-[1.3] font-bold py-2 px-2 hover:bg-white/[0.04] rounded transition-colors duration-100"
+            className="flex items-center justify-between w-full text-white/70 hover:text-white text-[13px] leading-[1.3] font-bold py-2 px-2 hover:bg-white/[0.04] rounded transition-colors duration-150"
           >
             <div className="flex items-center gap-2">
               <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform duration-200 ${!channelsExpanded ? '-rotate-90' : ''}`} />
@@ -285,7 +285,7 @@ const Sidebar = ({
                     <span className="truncate">{channel.name}</span>
                   </div>
                   {channel.unread > 0 && (
-                    <span className="bg-white text-[#3F0E40] text-[11px] leading-none font-bold px-1.5 py-1 rounded min-w-[20px] h-5 flex items-center justify-center flex-shrink-0 ml-2">
+                    <span className="bg-white text-[#3F0E40] text-[11px] leading-[1] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] h-5 flex items-center justify-center flex-shrink-0 ml-2">
                       {channel.unread}
                     </span>
                   )}
@@ -296,10 +296,10 @@ const Sidebar = ({
         </div>
 
         {/* Direct Messages Section */}
-        <div className="px-3 py-2 mt-4">
+        <div className="px-3 pt-4 pb-1">
           <button 
             onClick={() => setDmsExpanded(!dmsExpanded)}
-            className="flex items-center justify-between w-full text-white/70 hover:text-white text-[13px] leading-[1.3] font-bold py-2 px-2 hover:bg-white/[0.04] rounded transition-colors duration-100"
+            className="flex items-center justify-between w-full text-white/70 hover:text-white text-[13px] leading-[1.3] font-bold py-2 px-2 hover:bg-white/[0.04] rounded transition-colors duration-150"
           >
             <div className="flex items-center gap-2">
               <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform duration-200 ${!dmsExpanded ? '-rotate-90' : ''}`} />
@@ -325,15 +325,15 @@ const Sidebar = ({
                   >
                     <div className="flex items-center gap-3 truncate min-w-0">
                       <div className="relative flex-shrink-0">
-                        <span className="text-base leading-none">{user?.avatar || '👤'}</span>
+                        <span className="text-base leading-none block">{user?.avatar || '👤'}</span>
                         {user?.status === 'online' && (
-                          <Circle className="absolute -bottom-0.5 -right-0.5 w-[6px] h-[6px] fill-[#2BAC76] text-[#2BAC76] stroke-[#3F0E40] stroke-[2.5px]" />
+                          <Circle className="absolute -bottom-0.5 -right-0.5 w-[6px] h-[6px] fill-[#2BAC76] text-[#2BAC76] stroke-[#3F0E40] stroke-[2px]" />
                         )}
                       </div>
                       <span className="truncate">{user?.name || 'User'}</span>
                     </div>
                     {dm.unread > 0 && (
-                      <span className="bg-[#E01E5A] text-white text-[11px] leading-none font-bold px-1.5 py-1 rounded min-w-[20px] h-5 flex items-center justify-center flex-shrink-0 ml-2">
+                      <span className="bg-[#E01E5A] text-white text-[11px] leading-[1] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] h-5 flex items-center justify-center flex-shrink-0 ml-2">
                         {dm.unread}
                       </span>
                     )}
@@ -345,8 +345,8 @@ const Sidebar = ({
         </div>
 
         {/* Apps Section */}
-        <div className="px-3 py-2 mt-4">
-          <button className="flex items-center justify-between w-full text-white/70 hover:text-white text-[13px] leading-[1.3] font-bold py-2 px-2 hover:bg-white/[0.04] rounded transition-colors duration-100">
+        <div className="px-3 pt-4 pb-2">
+          <button className="flex items-center justify-between w-full text-white/70 hover:text-white text-[13px] leading-[1.3] font-bold py-2 px-2 hover:bg-white/[0.04] rounded transition-colors duration-150">
             <div className="flex items-center gap-2">
               <ChevronDown className="w-3 h-3 flex-shrink-0 -rotate-90" />
               <span>Apps</span>
@@ -357,10 +357,10 @@ const Sidebar = ({
       </div>
 
       {/* User Profile Footer */}
-      <div className="px-3 py-3 border-t border-white/[0.1] flex-shrink-0 relative" ref={profileMenuRef}>
+      <div className="px-3 py-2.5 border-t border-white/[0.1] flex-shrink-0 relative" ref={profileMenuRef}>
         <button 
           onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-          className="flex items-center gap-2 hover:bg-white/[0.06] rounded px-2 py-1.5 w-full transition-colors duration-150"
+          className="flex items-center gap-2.5 hover:bg-white/[0.06] rounded px-2 py-1.5 w-full transition-colors duration-150"
         >
           <div className="relative flex-shrink-0">
             <span className="text-2xl leading-none">{currentUser?.avatar || '👤'}</span>
