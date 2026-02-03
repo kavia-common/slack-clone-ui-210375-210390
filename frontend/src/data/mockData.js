@@ -27,6 +27,7 @@ export const users = [
     status: 'online',
     title: 'Senior Engineer',
     timezone: 'PST',
+    email: 'sarah.chen@kavia.ai',
   },
   {
     id: 'u2',

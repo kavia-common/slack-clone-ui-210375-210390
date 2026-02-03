@@ -1,5 +1,5 @@
-import React from 'react';
-import { Hash, Lock, ChevronDown, Plus, MessageSquare, Edit3, AtSign, Bookmark, MoreHorizontal, MessageCircle, Circle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Hash, Lock, ChevronDown, Plus, MessageSquare, Edit3, AtSign, Bookmark, MoreHorizontal, MessageCircle, Circle, User, Settings, HelpCircle, LogOut } from 'lucide-react';
 
 // PUBLIC_INTERFACE
 /**
@@ -25,8 +25,27 @@ const Sidebar = ({
   users,
   currentWorkspace 
 }) => {
-  const [channelsExpanded, setChannelsExpanded] = React.useState(true);
-  const [dmsExpanded, setDmsExpanded] = React.useState(true);
+  const [channelsExpanded, setChannelsExpanded] = useState(true);
+  const [dmsExpanded, setDmsExpanded] = useState(true);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+
+  // Mock current user (in a real app, this would come from auth context)
+  const currentUser = users[0]; // Using first user as the logged-in user
+
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    if (profileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [profileMenuOpen]);
 
   if (isCollapsed) {
     return (
@@ -208,17 +227,82 @@ const Sidebar = ({
       </div>
 
       {/* User Profile Footer */}
-      <div className="px-3 py-3 border-t border-white/[0.1] flex-shrink-0">
-        <button className="flex items-center gap-2 hover:bg-white/[0.06] rounded px-2 py-1.5 w-full transition-colors duration-150">
+      <div className="px-3 py-3 border-t border-white/[0.1] flex-shrink-0 relative" ref={profileMenuRef}>
+        <button 
+          onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+          className="flex items-center gap-2 hover:bg-white/[0.06] rounded px-2 py-1.5 w-full transition-colors duration-150"
+        >
           <div className="relative flex-shrink-0">
-            <span className="text-2xl leading-none">👤</span>
-            <Circle className="absolute bottom-0 right-0 w-3 h-3 fill-[#2BAC76] text-[#2BAC76] stroke-[#3F0E40] stroke-[2.5px]" />
+            <span className="text-2xl leading-none">{currentUser?.avatar || '👤'}</span>
+            <Circle className={`absolute bottom-0 right-0 w-3 h-3 fill-[#2BAC76] text-[#2BAC76] stroke-[#3F0E40] stroke-[2.5px] ${currentUser?.status === 'online' ? 'block' : 'hidden'}`} />
           </div>
           <div className="flex-1 text-left min-w-0">
-            <div className="text-[15px] font-semibold text-white truncate leading-[1.4]">You</div>
-            <div className="text-xs text-white/70">Active</div>
+            <div className="text-[15px] font-semibold text-white truncate leading-[1.4]">{currentUser?.name || 'User'}</div>
+            <div className="text-xs text-white/70 capitalize">{currentUser?.status || 'Active'}</div>
           </div>
         </button>
+
+        {/* Profile Dropdown Menu */}
+        {profileMenuOpen && (
+          <div className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-lg shadow-2xl border border-gray-200 py-2 z-50">
+            {/* User Info Header */}
+            <div className="px-4 py-3 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <span className="text-3xl leading-none">{currentUser?.avatar || '👤'}</span>
+                  <Circle className={`absolute bottom-0 right-0 w-3 h-3 fill-[#2BAC76] text-[#2BAC76] stroke-white stroke-[2.5px] ${currentUser?.status === 'online' ? 'block' : 'hidden'}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[15px] font-bold text-gray-900 truncate">{currentUser?.name || 'User'}</div>
+                  <div className="text-xs text-gray-600">{currentUser?.title || 'Team Member'}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Section */}
+            <div className="py-2">
+              <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Status
+              </div>
+              <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-3 text-gray-700 transition-colors">
+                <Circle className="w-3 h-3 fill-[#2BAC76] text-[#2BAC76]" />
+                <span>Active</span>
+              </button>
+              <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-3 text-gray-700 transition-colors">
+                <Circle className="w-3 h-3 fill-gray-400 text-gray-400" />
+                <span>Away</span>
+              </button>
+            </div>
+
+            <div className="border-t border-gray-200 my-1" />
+
+            {/* Menu Options */}
+            <div className="py-1">
+              <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-3 text-gray-700 transition-colors">
+                <User className="w-4 h-4" />
+                <span>Profile</span>
+              </button>
+              <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-3 text-gray-700 transition-colors">
+                <Settings className="w-4 h-4" />
+                <span>Preferences</span>
+              </button>
+              <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-3 text-gray-700 transition-colors">
+                <HelpCircle className="w-4 h-4" />
+                <span>Help</span>
+              </button>
+            </div>
+
+            <div className="border-t border-gray-200 my-1" />
+
+            {/* Sign Out */}
+            <div className="py-1">
+              <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-3 text-red-600 transition-colors">
+                <LogOut className="w-4 h-4" />
+                <span>Sign out of {currentWorkspace?.name || 'Workspace'}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
